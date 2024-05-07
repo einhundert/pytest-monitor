@@ -1,7 +1,10 @@
 import os
 import sqlite3
 
-import psycopg2
+try:
+    import psycopg
+except ImportError:
+    import psycopg2 as psycopg
 
 
 class SqliteDBHandler:
@@ -173,7 +176,7 @@ class PostgresDBHandler:
             f"dbname='{self.__db}' user='{self.__user}' password='{self.__password}' "
             + f"host='{self.__host}' port='{self.__port}'"
         )
-        return psycopg2.connect(connection_string)
+        return psycopg.connect(connection_string)
 
     def query(self, what, bind_to, many=False):
         cursor = self.__cnx.cursor()
