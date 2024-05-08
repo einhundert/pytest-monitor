@@ -213,7 +213,9 @@ def pytest_pyfunc_call(pyfuncitem):
         setattr(pyfuncitem, "monitor_results", True)
 
     if not PYTEST_MONITORING_ENABLED:
-        wrapped_function()
+        e = wrapped_function()
+        if isinstance(e, BaseException):
+            raise e
     else:
         if not pyfuncitem.session.config.option.mtr_disable_gc:
             gc.collect()

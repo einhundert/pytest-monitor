@@ -1,7 +1,7 @@
 =========
 Changelog
 =========
-
+* :bug: `#79` Fix a bug concerning commandline flag `--no-monitor` causing tests that are supposed to fail to pass instead
 * :release:`1.6.6 <2023-05-06>`
 * :bug:`#64` Prepare version 1.7.0 of pytest-monitor. Last version to support Python <= 3.7 and all pytest <= 5.*
 * :bug:`#0` Improve and fix some CI issues, notably one that may cause python to not be the requested one but a more recent one.
