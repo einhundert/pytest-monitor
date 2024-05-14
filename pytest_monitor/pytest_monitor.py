@@ -3,10 +3,11 @@ import gc
 import time
 import warnings
 
-import memory_profiler
 import pytest
 
 from pytest_monitor.session import PyTestMonitorSession
+
+from .profiler import memory_usage
 
 # These dictionaries are used to compute members set on each items.
 # KEY is the marker set on a test function
@@ -211,9 +212,10 @@ def pytest_pyfunc_call(pyfuncitem):
             return e
 
     def prof():
-        m = memory_profiler.memory_usage((wrapped_function, ()), max_iterations=1, max_usage=True, retval=True)
+        m = memory_usage((wrapped_function, ()), retval=True)
         if isinstance(m[1], BaseException):  # Do we have any outcome?
             raise m[1]
+
         memuse = m[0][0] if type(m[0]) is list else m[0]
         setattr(pyfuncitem, "mem_usage", memuse)
         setattr(pyfuncitem, "monitor_results", True)
