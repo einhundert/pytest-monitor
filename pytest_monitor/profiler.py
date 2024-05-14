@@ -27,6 +27,11 @@ def memory_usage(proc: tuple[Callable, Any, Any], retval=False):
         f(*args, **kw).
         Set to -1 (default) for current process.
 
+    retval : bool, optional
+        For profiling python functions. Save the return value of the profiled
+        function. Return value of memory_usage becomes a tuple:
+        (mem_usage, retval)
+
     Returns
     -------
     mem_usage : list of floating-point values
