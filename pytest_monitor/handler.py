@@ -35,13 +35,14 @@ class DBHandler:
         kernel_time,
         cpu_usage,
         mem_usage,
+        passed: bool,
     ):
         with self.__cnx:
             self.__cnx.execute(
                 "insert into TEST_METRICS(SESSION_H,ENV_H,ITEM_START_TIME,ITEM,"
                 "ITEM_PATH,ITEM_VARIANT,ITEM_FS_LOC,KIND,COMPONENT,TOTAL_TIME,"
-                "USER_TIME,KERNEL_TIME,CPU_USAGE,MEM_USAGE) "
-                "values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                "USER_TIME,KERNEL_TIME,CPU_USAGE,MEM_USAGE,TEST_PASSED) "
+                "values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (
                     session_id,
                     env_id,
@@ -57,6 +58,7 @@ class DBHandler:
                     kernel_time,
                     cpu_usage,
                     mem_usage,
+                    passed,
                 ),
             )
 
@@ -109,6 +111,7 @@ CREATE TABLE IF NOT EXISTS TEST_METRICS (
     KERNEL_TIME float, -- time spent in kernel space
     CPU_USAGE float, -- cpu usage
     MEM_USAGE float, -- Max resident memory used.
+    TEST_PASSED boolean, -- boolean indicating if test passed
     FOREIGN KEY (ENV_H) REFERENCES EXECUTION_CONTEXTS(ENV_H),
     FOREIGN KEY (SESSION_H) REFERENCES TEST_SESSIONS(SESSION_H)
 );"""
