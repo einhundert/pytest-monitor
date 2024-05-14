@@ -124,8 +124,10 @@ class PyTestMonitorSession:
         def dummy():
             return True
 
-        memuse = memory_usage((dummy,))
-        self.__mem_usage_base = memuse[0] if type(memuse) is list else memuse
+        (memuse, exception) = memory_usage((dummy,))
+        self.__mem_usage_base = memuse
+        if isinstance(exception, BaseException):
+            raise
 
     def add_test_info(
         self,
