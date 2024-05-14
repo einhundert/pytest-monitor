@@ -212,13 +212,15 @@ def pytest_pyfunc_call(pyfuncitem):
             return e
 
     def prof():
-        m = memory_usage((wrapped_function, ()), retval=True)
-        if isinstance(m[1], BaseException):  # Do we have any outcome?
-            raise m[1]
-
-        memuse = m[0][0] if type(m[0]) is list else m[0]
+        (memuse, exception) = memory_usage((wrapped_function, ()))
         setattr(pyfuncitem, "mem_usage", memuse)
         setattr(pyfuncitem, "monitor_results", True)
+
+        if isinstance(exception, BaseException):  # Do we have any outcome?
+            setattr(pyfuncitem, "passed", False)
+            raise exception
+
+        setattr(pyfuncitem, "passed", True)
 
     if not PYTEST_MONITORING_ENABLED:
         e = wrapped_function()
