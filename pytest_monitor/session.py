@@ -5,11 +5,11 @@ import os
 import warnings
 from http import HTTPStatus
 
-import memory_profiler
 import psutil
 import requests
 
 from pytest_monitor.handler import DBHandler
+from pytest_monitor.profiler import memory_usage
 from pytest_monitor.sys_utils import (
     ExecutionContext,
     collect_ci_info,
@@ -124,7 +124,7 @@ class PyTestMonitorSession:
         def dummy():
             return True
 
-        memuse = memory_profiler.memory_usage((dummy,), max_iterations=1, max_usage=True)
+        memuse = memory_usage((dummy,))
         self.__mem_usage_base = memuse[0] if type(memuse) is list else memuse
 
     def add_test_info(
