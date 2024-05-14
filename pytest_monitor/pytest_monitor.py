@@ -296,6 +296,7 @@ def _prf_module_tracer(request):
             ptimes_b.user - ptimes_a.user,
             ptimes_b.system - ptimes_a.system,
             rss,
+            True,
         )
 
 
@@ -322,4 +323,5 @@ def _prf_tracer(request):
                 ptimes_b.user - ptimes_a.user,
                 ptimes_b.system - ptimes_a.system,
                 request.node.mem_usage,
+                getattr(request.node, "passed", False),
             )

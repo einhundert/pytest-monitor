@@ -143,6 +143,7 @@ class PyTestMonitorSession:
         user_time,
         kernel_time,
         mem_usage,
+        passed: bool,
     ):
         if kind not in self.__scope:
             return
@@ -169,6 +170,7 @@ class PyTestMonitorSession:
                 kernel_time,
                 cpu_usage,
                 mem_usage,
+                passed,
             )
         if self.__remote and self.remote_env_id is not None:
             r = requests.post(
@@ -188,6 +190,7 @@ class PyTestMonitorSession:
                     "kernel_time": kernel_time,
                     "cpu_usage": cpu_usage,
                     "mem_usage": mem_usage,
+                    "test_passed": passed,
                 },
             )
             if r.status_code != HTTPStatus.CREATED:
