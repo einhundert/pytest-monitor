@@ -533,3 +533,12 @@ CREATE TABLE IF NOT EXISTS EXECUTION_CONTEXTS (
 
     except Exception:
         raise
+
+
+def test_monitor_DBHandler_check_new_db_setup(pytester):
+    from pytest_monitor.handler import DBHandler
+
+    # db handler
+    db = DBHandler(":memory:")
+    table_cols = db.query("PRAGMA table_info(TEST_METRICS)", (), many=True)
+    assert any(column[1] == "TEST_PASSED" for column in table_cols)    
