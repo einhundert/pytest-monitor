@@ -469,20 +469,18 @@ CREATE TABLE IF NOT EXISTS EXECUTION_CONTEXTS (
         conn.commit()
         return conn
 
-    dbpath = "mockdb"
     # open database in memory
-    mockdb = sqlite3.connect(dbpath)
+    mockdb = sqlite3.connect(":memory:")
     # prepare old database format
     mockdb = prepare_mock_db(mockdb)
 
-    # attach to DBHandler object
+    # attach mocked db to DBHandler object 
     db = DBHandler(":memory:")
     db.__cnx = mockdb
     db._DBHandler__cnx = mockdb
     db._DBHandler__db = "mockdb"
 
     # insert old style entry
-    # TODO
     run_date = datetime.datetime.now().isoformat()
     db.insert_session("1", run_date, determine_scm_revision(), "Test Session")
     db.__cnx.cursor().execute(
@@ -535,7 +533,3 @@ CREATE TABLE IF NOT EXISTS EXECUTION_CONTEXTS (
 
     except Exception:
         raise
-    finally:
-        import os
-
-        os.remove(dbpath)
