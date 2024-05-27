@@ -188,6 +188,17 @@ class PostgresDBHandler:
             raise Exception("Please provide the postgres port using the PYTEST_MONITOR_DB_PORT environment variable.")
         self.__cnx = self.connect()
         self.prepare()
+        self.check_create_test_passed_column()
+
+    def check_create_test_passed_column(self):
+        cursor = self.__cnx.cursor()
+        # check for test_passed column,
+        # table exists bc call happens after prepare()
+        cursor.execute("PRAGMA table_info(TEST_METRICS)")
+        has_test_column = any(column[1] == "TEST_PASSED" for column in cursor.fetchall())
+        if not has_test_column:
+            cursor.execute("ALTER TABLE TEST_METRICS ADD COLUMN TEST_PASSED BOOLEAN DEFAULT TRUE;")
+            self.__cnx.commit()
     
     def __del__(self):
         self.__cnx.close()
@@ -228,13 +239,14 @@ class PostgresDBHandler:
         kernel_time,
         cpu_usage,
         mem_usage,
+        passed: bool,
     ):
         with self.__cnx:
             self.__cnx.cursor().execute(
                 "insert into TEST_METRICS(SESSION_H,ENV_H,ITEM_START_TIME,ITEM,"
                 "ITEM_PATH,ITEM_VARIANT,ITEM_FS_LOC,KIND,COMPONENT,TOTAL_TIME,"
-                "USER_TIME,KERNEL_TIME,CPU_USAGE,MEM_USAGE) "
-                "values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                "USER_TIME,KERNEL_TIME,CPU_USAGE,MEM_USAGE,TEST_PASSED) "
+                "values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                 (
                     session_id,
                     env_id,
@@ -250,6 +262,7 @@ class PostgresDBHandler:
                     kernel_time,
                     cpu_usage,
                     mem_usage,
+                    passed,
                 ),
             )
 
@@ -319,6 +332,7 @@ CREATE TABLE IF NOT EXISTS TEST_METRICS (
     KERNEL_TIME float, -- time spent in kernel space
     CPU_USAGE float, -- cpu usage
     MEM_USAGE float, -- Max resident memory used.
+    TEST_PASSED boolean, -- boolean indicating if test passed
     FOREIGN KEY (ENV_H) REFERENCES EXECUTION_CONTEXTS(ENV_H),
     FOREIGN KEY (SESSION_H) REFERENCES TEST_SESSIONS(SESSION_H)
 );"""
