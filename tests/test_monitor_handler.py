@@ -5,7 +5,7 @@ import sqlite3
 def test_sqlite_handler_check_create_test_passed_column(pytester):
     import datetime
 
-    from pytest_monitor.handler import DBHandler
+    from pytest_monitor.handler import SqliteDBHandler as DBHandler
     from pytest_monitor.sys_utils import determine_scm_revision
 
     # import os
@@ -130,7 +130,7 @@ CREATE TABLE IF NOT EXISTS EXECUTION_CONTEXTS (
 
 
 def test_sqlite_handler_check_new_db_setup(pytester):
-    from pytest_monitor.handler import DBHandler
+    from pytest_monitor.handler import SqliteDBHandler as DBHandler
 
     # db handler
     db = DBHandler(":memory:")
