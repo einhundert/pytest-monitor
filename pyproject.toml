@@ -63,7 +63,9 @@ dev = [
     "flake8-return==1.2.0",
     "flake8-simplify==0.19.3",
     "flake8-pyproject==1.2.3",
-    "pre-commit==3.3.3"
+    "pre-commit==3.3.3",
+    "psycopg",
+    "psycopg2-binary"
 ]
 psycopg = [
     "psycopg"
