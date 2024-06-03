@@ -194,8 +194,9 @@ class PostgresDBHandler:
         cursor = self.__cnx.cursor()
         # check for test_passed column,
         # table exists bc call happens after prepare()
-        cursor.execute("PRAGMA table_info(TEST_METRICS)")
-        has_test_column = any(column[1] == "TEST_PASSED" for column in cursor.fetchall())
+        cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'test_metrics'")
+        columns = cursor.fetchall()
+        has_test_column = any(column[0] == "test_passed" for column in columns)
         if not has_test_column:
             cursor.execute("ALTER TABLE TEST_METRICS ADD COLUMN TEST_PASSED BOOLEAN DEFAULT TRUE;")
             self.__cnx.commit()
