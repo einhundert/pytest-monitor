@@ -8,6 +8,7 @@ from http import HTTPStatus
 import psutil
 import requests
 
+from pytest_monitor.profiler import memory_usage
 from pytest_monitor.handler import SqliteDBHandler, PostgresDBHandler
 from pytest_monitor.sys_utils import (
     ExecutionContext,
