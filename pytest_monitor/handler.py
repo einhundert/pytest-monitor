@@ -13,6 +13,9 @@ class SqliteDBHandler:
         self.__cnx = sqlite3.connect(self.__db) if db_path else None
         self.prepare()
 
+    def __del__(self):
+        self.__cnx.close()
+
     def query(self, what, bind_to, many=False):
         cursor = self.__cnx.cursor()
         cursor.execute(what, bind_to)
@@ -170,6 +173,9 @@ class PostgresDBHandler:
             raise Exception("Please provide the postgres port using the PYTEST_MONITOR_DB_PORT environment variable.")
         self.__cnx = self.connect()
         self.prepare()
+    
+    def __del__(self):
+        self.__cnx.close()
 
     def connect(self):
         connection_string = (
