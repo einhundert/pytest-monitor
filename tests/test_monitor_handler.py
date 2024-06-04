@@ -14,19 +14,22 @@ from pytest_monitor.sys_utils import determine_scm_revision
 from pytest_monitor.handler import SqliteDBHandler
 from pytest_monitor.handler import PostgresDBHandler
 
+import sys
+
 # helper function
 def reset_db(cleanup_cursor):
-    try:
+    cleanup_cursor.execute("SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'public';")
+    has_schema = cleanup_cursor.fetchone()
+
+    if has_schema is not None:
         cleanup_cursor.execute("DROP SCHEMA public CASCADE;")
-        cleanup_cursor.execute("CREATE SCHEMA public;")
-        cleanup_cursor.execute("SET search_path TO public;")
-        cleanup_cursor.execute("SET schema public;")
-        cleanup_cursor.execute("ALTER ROLE postgres SET search_path TO public;")
-        cleanup_cursor.execute("ALTER SCHEMA public OWNER to postgres;")
-        cleanup_cursor.execute("GRANT ALL ON SCHEMA public TO postgres;")
-        cleanup_cursor.execute("GRANT ALL ON SCHEMA public TO public;")
-    except Exception:
-        pass
+
+    cleanup_cursor.execute("CREATE SCHEMA public;")
+    cleanup_cursor.execute("SET search_path TO public;")
+    cleanup_cursor.execute("ALTER ROLE postgres SET search_path TO public;")
+    cleanup_cursor.execute("ALTER SCHEMA public OWNER to postgres;")
+    cleanup_cursor.execute("GRANT ALL ON SCHEMA public TO postgres;")
+    cleanup_cursor.execute("GRANT ALL ON SCHEMA public TO public;")
 
 @pytest.fixture
 def sqlite_empty_mock_db() -> sqlite3.Connection:
