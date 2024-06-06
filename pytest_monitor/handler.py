@@ -34,11 +34,11 @@ class SqliteDBHandler:
         return cursor.fetchall() if many else cursor.fetchone()
 
     def insert_session(self, h, run_date, scm_id, description):
-        with self.__cnx:
-            self.__cnx.execute(
-                "insert into TEST_SESSIONS(SESSION_H, RUN_DATE, SCM_ID, RUN_DESCRIPTION)" " values (?,?,?,?)",
-                (h, run_date, scm_id, description),
-            )
+        self.__cnx.execute(
+            "insert into TEST_SESSIONS(SESSION_H, RUN_DATE, SCM_ID, RUN_DESCRIPTION)" " values (?,?,?,?)",
+            (h, run_date, scm_id, description),
+        )
+        self.__cnx.commit()
 
     def insert_metric(
         self,
@@ -58,18 +58,17 @@ class SqliteDBHandler:
         mem_usage,
         passed: bool,
     ):
-        with self.__cnx:
-            self.__cnx.execute(
-                "insert into TEST_METRICS(SESSION_H,ENV_H,ITEM_START_TIME,ITEM,"
-                "ITEM_PATH,ITEM_VARIANT,ITEM_FS_LOC,KIND,COMPONENT,TOTAL_TIME,"
-                "USER_TIME,KERNEL_TIME,CPU_USAGE,MEM_USAGE,TEST_PASSED) "
-                "values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                (
-                    session_id,
-                    env_id,
-                    item_start_date,
-                    item,
-                    item_path,
+        self.__cnx.execute(
+            "insert into TEST_METRICS(SESSION_H,ENV_H,ITEM_START_TIME,ITEM,"
+            "ITEM_PATH,ITEM_VARIANT,ITEM_FS_LOC,KIND,COMPONENT,TOTAL_TIME,"
+            "USER_TIME,KERNEL_TIME,CPU_USAGE,MEM_USAGE,TEST_PASSED) "
+            "values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                session_id,
+                env_id,
+                item_start_date,
+                item,
+                item_path,
                     item_variant,
                     item_loc,
                     kind,
@@ -81,11 +80,11 @@ class SqliteDBHandler:
                     mem_usage,
                     passed,
                 ),
-            )
+        )
+        self.__cnx.commit()
 
     def insert_execution_context(self, exc_context):
-        with self.__cnx:
-            self.__cnx.execute(
+        self.__cnx.execute(
                 "insert into EXECUTION_CONTEXTS(CPU_COUNT,CPU_FREQUENCY_MHZ,CPU_TYPE,CPU_VENDOR,"
                 "RAM_TOTAL_MB,MACHINE_NODE,MACHINE_TYPE,MACHINE_ARCH,SYSTEM_INFO,"
                 "PYTHON_INFO,ENV_H) values (?,?,?,?,?,?,?,?,?,?,?)",
@@ -103,6 +102,7 @@ class SqliteDBHandler:
                     exc_context.compute_hash(),
                 ),
             )
+        self.__cnx.commit()
 
     def prepare(self):
         cursor = self.__cnx.cursor()
@@ -204,7 +204,6 @@ class PostgresDBHandler:
     def __del__(self):
         self.__cnx.close()
 
-
     def connect(self):
         connection_string = (
             f"dbname='{self.__db}' user='{self.__user}' password='{self.__password}' "
@@ -218,11 +217,11 @@ class PostgresDBHandler:
         return cursor.fetchall() if many else cursor.fetchone()
 
     def insert_session(self, h, run_date, scm_id, description):
-        with self.__cnx:
-            self.__cnx.cursor().execute(
+        self.__cnx.cursor().execute(
                 "insert into TEST_SESSIONS(SESSION_H, RUN_DATE, SCM_ID, RUN_DESCRIPTION)" " values (%s,%s,%s,%s)",
                 (h, run_date, scm_id, description),
-            )
+        )
+        self.__cnx.commit()
 
     def insert_metric(
         self,
@@ -242,8 +241,7 @@ class PostgresDBHandler:
         mem_usage,
         passed: bool,
     ):
-        with self.__cnx:
-            self.__cnx.cursor().execute(
+        self.__cnx.cursor().execute(
                 "insert into TEST_METRICS(SESSION_H,ENV_H,ITEM_START_TIME,ITEM,"
                 "ITEM_PATH,ITEM_VARIANT,ITEM_FS_LOC,KIND,COMPONENT,TOTAL_TIME,"
                 "USER_TIME,KERNEL_TIME,CPU_USAGE,MEM_USAGE,TEST_PASSED) "
@@ -266,10 +264,10 @@ class PostgresDBHandler:
                     passed,
                 ),
             )
+        self.__cnx.commit()
 
     def insert_execution_context(self, exc_context):
-        with self.__cnx:
-            self.__cnx.cursor().execute(
+        self.__cnx.cursor().execute(
                 "insert into EXECUTION_CONTEXTS(CPU_COUNT,CPU_FREQUENCY_MHZ,CPU_TYPE,CPU_VENDOR,"
                 "RAM_TOTAL_MB,MACHINE_NODE,MACHINE_TYPE,MACHINE_ARCH,SYSTEM_INFO,"
                 "PYTHON_INFO,ENV_H) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
@@ -287,6 +285,7 @@ class PostgresDBHandler:
                     exc_context.compute_hash(),
                 ),
             )
+        self.__cnx.commit()
 
     def prepare(self):
         cursor = self.__cnx.cursor()
