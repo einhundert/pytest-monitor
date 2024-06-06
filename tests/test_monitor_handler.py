@@ -14,22 +14,19 @@ from pytest_monitor.sys_utils import determine_scm_revision
 from pytest_monitor.handler import SqliteDBHandler
 from pytest_monitor.handler import PostgresDBHandler
 
-import sys
 
 # helper function
 def reset_db(cleanup_cursor):
-    cleanup_cursor.execute("SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'public';")
-    has_schema = cleanup_cursor.fetchone()
+    cleanup_cursor.execute("DROP DATABASE postgres")
+    cleanup_cursor.execute("CREATE DATABASE postgres")
 
-    if has_schema is not None:
-        cleanup_cursor.execute("DROP SCHEMA public CASCADE;")
+    # cleanup_cursor.execute("CREATE SCHEMA public;")
+    # cleanup_cursor.execute("ALTER DATABASE postgres SET search_path TO public;")
+    # cleanup_cursor.execute("ALTER ROLE postgres SET search_path TO public;")
+    # cleanup_cursor.execute("ALTER SCHEMA public OWNER to postgres;")
+    # cleanup_cursor.execute("GRANT ALL ON SCHEMA public TO postgres;")
+    # cleanup_cursor.execute("GRANT ALL ON SCHEMA public TO public;")
 
-    cleanup_cursor.execute("CREATE SCHEMA public;")
-    cleanup_cursor.execute("SET search_path TO public;")
-    cleanup_cursor.execute("ALTER ROLE postgres SET search_path TO public;")
-    cleanup_cursor.execute("ALTER SCHEMA public OWNER to postgres;")
-    cleanup_cursor.execute("GRANT ALL ON SCHEMA public TO postgres;")
-    cleanup_cursor.execute("GRANT ALL ON SCHEMA public TO public;")
 
 @pytest.fixture
 def sqlite_empty_mock_db() -> sqlite3.Connection:
@@ -288,7 +285,6 @@ CREATE TABLE IF NOT EXISTS TEST_METRICS (
     db_cursor.close()
 
 
-
 @pytest.fixture
 def connected_PostgresDBHandler(postgres_empty_db_mock_cursor):
     os.environ["PYTEST_MONITOR_DB_NAME"] = "postgres"
@@ -299,6 +295,7 @@ def connected_PostgresDBHandler(postgres_empty_db_mock_cursor):
     db = PostgresDBHandler()
     yield db
     reset_db(db._PostgresDBHandler__cnx.cursor())
+    db.__cnx.close()
 
 
 def test_sqlite_handler_check_create_test_passed_column(
@@ -360,7 +357,7 @@ def test_postgres_handler_check_create_test_passed_column(
     assert not has_test_column
 
     # attach new PostgresHandler
-    _ = PostgresDBHandler()
+    pghandler = PostgresDBHandler()
 
     # check for test passed column again (should exist now, auto-migration feature)
     mockdb_cursor.execute(
@@ -376,8 +373,14 @@ def test_postgres_handler_check_create_test_passed_column(
 
     # default value true(1) for entries after migration
     assert default_is_passed[0] == 1
+    pghandler.__cnx.close()
+
 
 def test_postgres_handler_check_new_db_setup(connected_PostgresDBHandler):
     db = connected_PostgresDBHandler
-    columns = db.query("SELECT column_name FROM information_schema.columns WHERE table_name = 'test_metrics'", (), many=True)
+    columns = db.query(
+        "SELECT column_name FROM information_schema.columns WHERE table_name = 'test_metrics'",
+        (),
+        many=True,
+    )
     assert any(column[0] == "test_passed" for column in columns)
