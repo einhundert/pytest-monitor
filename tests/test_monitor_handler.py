@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import datetime
-import sqlite3
-import subprocess
 import os
+import sqlite3
+
 import pytest
 
 try:
@@ -10,15 +10,17 @@ try:
 except ImportError:
     import psycopg2 as psycopg
 
+from pytest_monitor.handler import PostgresDBHandler, SqliteDBHandler
 from pytest_monitor.sys_utils import determine_scm_revision
-from pytest_monitor.handler import SqliteDBHandler
-from pytest_monitor.handler import PostgresDBHandler
 
 
 # helper function
 def reset_db(cleanup_cursor):
-    cleanup_cursor.execute("DROP DATABASE postgres")
-    cleanup_cursor.execute("CREATE DATABASE postgres")
+    # cleanup_cursor.execute("DROP DATABASE postgres")
+    # cleanup_cursor.execute("CREATE DATABASE postgres")
+    cleanup_cursor.execute("DROP TABLE IF EXISTS TEST_METRICS")
+    cleanup_cursor.execute("DROP TABLE IF EXISTS TEST_SESSIONS")
+    cleanup_cursor.execute("DROP TABLE IF EXISTS EXECUTION_CONTEXTS")
 
     # cleanup_cursor.execute("CREATE SCHEMA public;")
     # cleanup_cursor.execute("ALTER DATABASE postgres SET search_path TO public;")
@@ -161,8 +163,10 @@ def postgres_empty_db_mock_cursor():
     mockdb = psycopg.connect(connection_string)
     mockdb.autocommit = True
 
+    cursor = mockdb.cursor()
+    reset_db(cursor)
     # yield cursor to test context
-    yield mockdb.cursor()
+    yield cursor
 
     # cleanup db
     cleanup_cursor = mockdb.cursor()
@@ -373,7 +377,7 @@ def test_postgres_handler_check_create_test_passed_column(
 
     # default value true(1) for entries after migration
     assert default_is_passed[0] == 1
-    pghandler.__cnx.close()
+    pghandler._PostgresDBHandler__cnx.close()
 
 
 def test_postgres_handler_check_new_db_setup(connected_PostgresDBHandler):
