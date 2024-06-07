@@ -316,8 +316,11 @@ def pytest_sessionstart(session):
     yield
 
 
-# def pytest_sessionfinish(session, exitcode):
-#    pass
+@pytest.hookimpl(hookwrapper=True)
+def pytest_sessionfinish(session):
+    if session.pytest_monitor is not None:
+        session.pytest_monitor.close()
+    yield
 
 
 @pytest.fixture(autouse=True, scope="module")

@@ -29,6 +29,9 @@ class SqliteDBHandler:
             )
             self.__cnx.commit()
 
+    def close(self):
+        self.__cnx.close()
+
     def __del__(self):
         self.__cnx.close()
 
@@ -213,6 +216,9 @@ class PostgresDBHandler:
                 "ALTER TABLE TEST_METRICS ADD COLUMN TEST_PASSED BOOLEAN DEFAULT TRUE;"
             )
             self.__cnx.commit()
+
+    def close(self):
+        self.__cnx.close()
 
     def __del__(self):
         self.__cnx.close()
