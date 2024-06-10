@@ -361,6 +361,7 @@ CREATE TABLE IF NOT EXISTS TEST_METRICS (
         self.__cnx.commit()
 
     def get_env_id(self, env_hash):
-        return self.query(
+        query_result = self.query(
             "select ENV_H from EXECUTION_CONTEXTS where ENV_H = %s", (env_hash,)
         )
+        return query_result[0] if query_result else None
