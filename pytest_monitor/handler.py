@@ -20,10 +20,17 @@ class SqliteDBHandler:
         # check for test_passed column,
         # table exists bc call happens after prepare()
         cursor.execute("PRAGMA table_info(TEST_METRICS)")
-        has_test_column = any(column[1] == "TEST_PASSED" for column in cursor.fetchall())
+        has_test_column = any(
+            column[1] == "TEST_PASSED" for column in cursor.fetchall()
+        )
         if not has_test_column:
-            cursor.execute("ALTER TABLE TEST_METRICS ADD COLUMN TEST_PASSED BOOLEAN DEFAULT TRUE;")
+            cursor.execute(
+                "ALTER TABLE TEST_METRICS ADD COLUMN TEST_PASSED BOOLEAN DEFAULT TRUE;"
+            )
             self.__cnx.commit()
+
+    def close(self):
+        self.__cnx.close()
 
     def __del__(self):
         self.__cnx.close()
@@ -34,11 +41,12 @@ class SqliteDBHandler:
         return cursor.fetchall() if many else cursor.fetchone()
 
     def insert_session(self, h, run_date, scm_id, description):
-        with self.__cnx:
-            self.__cnx.execute(
-                "insert into TEST_SESSIONS(SESSION_H, RUN_DATE, SCM_ID, RUN_DESCRIPTION)" " values (?,?,?,?)",
-                (h, run_date, scm_id, description),
-            )
+        self.__cnx.execute(
+            "insert into TEST_SESSIONS(SESSION_H, RUN_DATE, SCM_ID, RUN_DESCRIPTION)"
+            " values (?,?,?,?)",
+            (h, run_date, scm_id, description),
+        )
+        self.__cnx.commit()
 
     def insert_metric(
         self,
@@ -58,51 +66,51 @@ class SqliteDBHandler:
         mem_usage,
         passed: bool,
     ):
-        with self.__cnx:
-            self.__cnx.execute(
-                "insert into TEST_METRICS(SESSION_H,ENV_H,ITEM_START_TIME,ITEM,"
-                "ITEM_PATH,ITEM_VARIANT,ITEM_FS_LOC,KIND,COMPONENT,TOTAL_TIME,"
-                "USER_TIME,KERNEL_TIME,CPU_USAGE,MEM_USAGE,TEST_PASSED) "
-                "values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                (
-                    session_id,
-                    env_id,
-                    item_start_date,
-                    item,
-                    item_path,
-                    item_variant,
-                    item_loc,
-                    kind,
-                    component,
-                    total_time,
-                    user_time,
-                    kernel_time,
-                    cpu_usage,
-                    mem_usage,
-                    passed,
-                ),
-            )
+        self.__cnx.execute(
+            "insert into TEST_METRICS(SESSION_H,ENV_H,ITEM_START_TIME,ITEM,"
+            "ITEM_PATH,ITEM_VARIANT,ITEM_FS_LOC,KIND,COMPONENT,TOTAL_TIME,"
+            "USER_TIME,KERNEL_TIME,CPU_USAGE,MEM_USAGE,TEST_PASSED) "
+            "values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                session_id,
+                env_id,
+                item_start_date,
+                item,
+                item_path,
+                item_variant,
+                item_loc,
+                kind,
+                component,
+                total_time,
+                user_time,
+                kernel_time,
+                cpu_usage,
+                mem_usage,
+                passed,
+            ),
+        )
+        self.__cnx.commit()
 
     def insert_execution_context(self, exc_context):
-        with self.__cnx:
-            self.__cnx.execute(
-                "insert into EXECUTION_CONTEXTS(CPU_COUNT,CPU_FREQUENCY_MHZ,CPU_TYPE,CPU_VENDOR,"
-                "RAM_TOTAL_MB,MACHINE_NODE,MACHINE_TYPE,MACHINE_ARCH,SYSTEM_INFO,"
-                "PYTHON_INFO,ENV_H) values (?,?,?,?,?,?,?,?,?,?,?)",
-                (
-                    exc_context.cpu_count,
-                    exc_context.cpu_frequency,
-                    exc_context.cpu_type,
-                    exc_context.cpu_vendor,
-                    exc_context.ram_total,
-                    exc_context.fqdn,
-                    exc_context.machine,
-                    exc_context.architecture,
-                    exc_context.system_info,
-                    exc_context.python_info,
-                    exc_context.compute_hash(),
-                ),
-            )
+        self.__cnx.execute(
+            "insert into EXECUTION_CONTEXTS(CPU_COUNT,CPU_FREQUENCY_MHZ,CPU_TYPE,CPU_VENDOR,"
+            "RAM_TOTAL_MB,MACHINE_NODE,MACHINE_TYPE,MACHINE_ARCH,SYSTEM_INFO,"
+            "PYTHON_INFO,ENV_H) values (?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                exc_context.cpu_count,
+                exc_context.cpu_frequency,
+                exc_context.cpu_type,
+                exc_context.cpu_vendor,
+                exc_context.ram_total,
+                exc_context.fqdn,
+                exc_context.machine,
+                exc_context.architecture,
+                exc_context.system_info,
+                exc_context.python_info,
+                exc_context.compute_hash(),
+            ),
+        )
+        self.__cnx.commit()
 
     def prepare(self):
         cursor = self.__cnx.cursor()
@@ -157,7 +165,9 @@ CREATE TABLE IF NOT EXISTS EXECUTION_CONTEXTS (
         self.__cnx.commit()
 
     def get_env_id(self, env_hash):
-        query_result = self.query("SELECT ENV_H FROM EXECUTION_CONTEXTS WHERE ENV_H= ?", (env_hash,))
+        query_result = self.query(
+            "SELECT ENV_H FROM EXECUTION_CONTEXTS WHERE ENV_H= ?", (env_hash,)
+        )
         return query_result[0] if query_result else None
 
 
@@ -185,7 +195,9 @@ class PostgresDBHandler:
             )
         self.__port = os.getenv("PYTEST_MONITOR_DB_PORT")
         if not self.__port:
-            raise Exception("Please provide the postgres port using the PYTEST_MONITOR_DB_PORT environment variable.")
+            raise Exception(
+                "Please provide the postgres port using the PYTEST_MONITOR_DB_PORT environment variable."
+            )
         self.__cnx = self.connect()
         self.prepare()
         self.check_create_test_passed_column()
@@ -194,16 +206,22 @@ class PostgresDBHandler:
         cursor = self.__cnx.cursor()
         # check for test_passed column,
         # table exists bc call happens after prepare()
-        cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'test_metrics'")
+        cursor.execute(
+            "SELECT column_name FROM information_schema.columns WHERE table_name = 'test_metrics'"
+        )
         columns = cursor.fetchall()
         has_test_column = any(column[0] == "test_passed" for column in columns)
         if not has_test_column:
-            cursor.execute("ALTER TABLE TEST_METRICS ADD COLUMN TEST_PASSED BOOLEAN DEFAULT TRUE;")
+            cursor.execute(
+                "ALTER TABLE TEST_METRICS ADD COLUMN TEST_PASSED BOOLEAN DEFAULT TRUE;"
+            )
             self.__cnx.commit()
-    
-    def __del__(self):
+
+    def close(self):
         self.__cnx.close()
 
+    def __del__(self):
+        self.__cnx.close()
 
     def connect(self):
         connection_string = (
@@ -218,11 +236,12 @@ class PostgresDBHandler:
         return cursor.fetchall() if many else cursor.fetchone()
 
     def insert_session(self, h, run_date, scm_id, description):
-        with self.__cnx:
-            self.__cnx.cursor().execute(
-                "insert into TEST_SESSIONS(SESSION_H, RUN_DATE, SCM_ID, RUN_DESCRIPTION)" " values (%s,%s,%s,%s)",
-                (h, run_date, scm_id, description),
-            )
+        self.__cnx.cursor().execute(
+            "insert into TEST_SESSIONS(SESSION_H, RUN_DATE, SCM_ID, RUN_DESCRIPTION)"
+            " values (%s,%s,%s,%s)",
+            (h, run_date, scm_id, description),
+        )
+        self.__cnx.commit()
 
     def insert_metric(
         self,
@@ -242,51 +261,51 @@ class PostgresDBHandler:
         mem_usage,
         passed: bool,
     ):
-        with self.__cnx:
-            self.__cnx.cursor().execute(
-                "insert into TEST_METRICS(SESSION_H,ENV_H,ITEM_START_TIME,ITEM,"
-                "ITEM_PATH,ITEM_VARIANT,ITEM_FS_LOC,KIND,COMPONENT,TOTAL_TIME,"
-                "USER_TIME,KERNEL_TIME,CPU_USAGE,MEM_USAGE,TEST_PASSED) "
-                "values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                (
-                    session_id,
-                    env_id,
-                    item_start_date,
-                    item,
-                    item_path,
-                    item_variant,
-                    item_loc,
-                    kind,
-                    component,
-                    total_time,
-                    user_time,
-                    kernel_time,
-                    cpu_usage,
-                    mem_usage,
-                    passed,
-                ),
-            )
+        self.__cnx.cursor().execute(
+            "insert into TEST_METRICS(SESSION_H,ENV_H,ITEM_START_TIME,ITEM,"
+            "ITEM_PATH,ITEM_VARIANT,ITEM_FS_LOC,KIND,COMPONENT,TOTAL_TIME,"
+            "USER_TIME,KERNEL_TIME,CPU_USAGE,MEM_USAGE,TEST_PASSED) "
+            "values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                session_id,
+                env_id,
+                item_start_date,
+                item,
+                item_path,
+                item_variant,
+                item_loc,
+                kind,
+                component,
+                total_time,
+                user_time,
+                kernel_time,
+                cpu_usage,
+                mem_usage,
+                passed,
+            ),
+        )
+        self.__cnx.commit()
 
     def insert_execution_context(self, exc_context):
-        with self.__cnx:
-            self.__cnx.cursor().execute(
-                "insert into EXECUTION_CONTEXTS(CPU_COUNT,CPU_FREQUENCY_MHZ,CPU_TYPE,CPU_VENDOR,"
-                "RAM_TOTAL_MB,MACHINE_NODE,MACHINE_TYPE,MACHINE_ARCH,SYSTEM_INFO,"
-                "PYTHON_INFO,ENV_H) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                (
-                    exc_context.cpu_count,
-                    exc_context.cpu_frequency,
-                    exc_context.cpu_type,
-                    exc_context.cpu_vendor,
-                    exc_context.ram_total,
-                    exc_context.fqdn,
-                    exc_context.machine,
-                    exc_context.architecture,
-                    exc_context.system_info,
-                    exc_context.python_info,
-                    exc_context.compute_hash(),
-                ),
-            )
+        self.__cnx.cursor().execute(
+            "insert into EXECUTION_CONTEXTS(CPU_COUNT,CPU_FREQUENCY_MHZ,CPU_TYPE,CPU_VENDOR,"
+            "RAM_TOTAL_MB,MACHINE_NODE,MACHINE_TYPE,MACHINE_ARCH,SYSTEM_INFO,"
+            "PYTHON_INFO,ENV_H) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                exc_context.cpu_count,
+                exc_context.cpu_frequency,
+                exc_context.cpu_type,
+                exc_context.cpu_vendor,
+                exc_context.ram_total,
+                exc_context.fqdn,
+                exc_context.machine,
+                exc_context.architecture,
+                exc_context.system_info,
+                exc_context.python_info,
+                exc_context.compute_hash(),
+            ),
+        )
+        self.__cnx.commit()
 
     def prepare(self):
         cursor = self.__cnx.cursor()
@@ -342,4 +361,7 @@ CREATE TABLE IF NOT EXISTS TEST_METRICS (
         self.__cnx.commit()
 
     def get_env_id(self, env_hash):
-        return self.query("select ENV_H from EXECUTION_CONTEXTS where ENV_H = %s", (env_hash,))
+        query_result = self.query(
+            "select ENV_H from EXECUTION_CONTEXTS where ENV_H = %s", (env_hash,)
+        )
+        return query_result[0] if query_result else None

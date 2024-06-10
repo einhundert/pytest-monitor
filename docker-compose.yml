@@ -16,6 +16,11 @@ services:
       POSTGRES_PASSWORD: testing_db
     ports:
       - 5432:5432
+    command: [ "postgres", "-c", "log_statement=all" ]
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
 
   adminer:
     image: adminer

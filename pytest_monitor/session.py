@@ -8,8 +8,8 @@ from http import HTTPStatus
 import psutil
 import requests
 
+from pytest_monitor.handler import PostgresDBHandler, SqliteDBHandler
 from pytest_monitor.profiler import memory_usage
-from pytest_monitor.handler import SqliteDBHandler, PostgresDBHandler
 from pytest_monitor.sys_utils import (
     ExecutionContext,
     collect_ci_info,
@@ -18,7 +18,15 @@ from pytest_monitor.sys_utils import (
 
 
 class PyTestMonitorSession:
-    def __init__(self, db=None, use_postgres=False, remote=None, component="", scope=None, tracing=True):
+    def __init__(
+        self,
+        db=None,
+        use_postgres=False,
+        remote=None,
+        component="",
+        scope=None,
+        tracing=True,
+    ):
         self.__db = None
         if use_postgres:
             self.__db = PostgresDBHandler()
@@ -32,6 +40,10 @@ class PyTestMonitorSession:
         self.__eid = (None, None)
         self.__mem_usage_base = None
         self.__process = psutil.Process(os.getpid())
+
+    def close(self):
+        if self.__db is not None:
+            self.__db.close()
 
     @property
     def monitoring_enabled(self):
@@ -116,7 +128,9 @@ class PyTestMonitorSession:
             # We must postpone that to be run at the end of the pytest session.
             r = requests.post(f"{self.__remote}/contexts/", json=env.to_dict())
             if r.status_code != HTTPStatus.CREATED:
-                warnings.warn(f"Cannot insert execution context in remote server (rc={r.status_code}! Deactivating...")
+                warnings.warn(
+                    f"Cannot insert execution context in remote server (rc={r.status_code}! Deactivating..."
+                )
                 self.__remote = ""
             else:
                 remote_id = json.loads(r.text)["h"]
