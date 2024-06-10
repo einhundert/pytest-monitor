@@ -7,20 +7,27 @@ import pytest
 
 try:
     import psycopg
+    from psycopg.cursor import BaseCursor as PostgresCursor
 except ImportError:
     import psycopg2 as psycopg
+    from psycopg2.extensions import cursor as PostgresCursor
 
 from pytest_monitor.handler import PostgresDBHandler, SqliteDBHandler
 from pytest_monitor.sys_utils import determine_scm_revision
 
+DB_Context = psycopg.Connection | sqlite3.Connection
+
 
 # helper function
-def reset_db(cleanup_cursor):
+def reset_db(db_context: DB_Context):
     # cleanup_cursor.execute("DROP DATABASE postgres")
     # cleanup_cursor.execute("CREATE DATABASE postgres")
+    cleanup_cursor = db_context.cursor()
     cleanup_cursor.execute("DROP TABLE IF EXISTS TEST_METRICS")
     cleanup_cursor.execute("DROP TABLE IF EXISTS TEST_SESSIONS")
     cleanup_cursor.execute("DROP TABLE IF EXISTS EXECUTION_CONTEXTS")
+    db_context.commit()
+    cleanup_cursor.close()
 
     # cleanup_cursor.execute("CREATE SCHEMA public;")
     # cleanup_cursor.execute("ALTER DATABASE postgres SET search_path TO public;")
@@ -163,15 +170,12 @@ def postgres_empty_db_mock_cursor():
     mockdb = psycopg.connect(connection_string)
     mockdb.autocommit = True
 
-    cursor = mockdb.cursor()
-    reset_db(cursor)
+    reset_db(mockdb)
     # yield cursor to test context
-    yield cursor
+    yield mockdb.cursor()
 
     # cleanup db
-    cleanup_cursor = mockdb.cursor()
-    reset_db(cleanup_cursor)
-    cleanup_cursor.close()
+    reset_db(mockdb)
     mockdb.close()
 
 
@@ -179,7 +183,7 @@ def postgres_empty_db_mock_cursor():
 @pytest.fixture
 def prepared_mock_db_cursor_postgres(
     postgres_empty_db_mock_cursor,
-) -> psycopg.extensions.cursor:
+) -> PostgresCursor:
     db_cursor = postgres_empty_db_mock_cursor
     db_cursor.execute(
         """
@@ -298,8 +302,8 @@ def connected_PostgresDBHandler(postgres_empty_db_mock_cursor):
     os.environ["PYTEST_MONITOR_DB_PORT"] = "5432"
     db = PostgresDBHandler()
     yield db
-    reset_db(db._PostgresDBHandler__cnx.cursor())
-    db.__cnx.close()
+    reset_db(db._PostgresDBHandler__cnx)
+    db._PostgresDBHandler__cnx.close()
 
 
 def test_sqlite_handler_check_create_test_passed_column(
