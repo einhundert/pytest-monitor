@@ -185,6 +185,9 @@ class PostgresDBHandler:
     def __del__(self):
         self.__cnx.close()
 
+    def close(self):
+        self.__cnx.close()
+
     def connect(self):
         connection_string = (
             f"dbname='{self.__db}' user='{self.__user}' password='{self.__password}' "
