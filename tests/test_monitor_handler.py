@@ -2,6 +2,7 @@
 import datetime
 import os
 import sqlite3
+import sys
 
 import pytest
 
@@ -294,7 +295,7 @@ CREATE TABLE IF NOT EXISTS TEST_METRICS (
 
 
 @pytest.fixture
-def connected_PostgresDBHandler(postgres_empty_db_mock_cursor):
+def connected_PostgresDBHandler():
     os.environ["PYTEST_MONITOR_DB_NAME"] = "postgres"
     os.environ["PYTEST_MONITOR_DB_USER"] = "postgres"
     os.environ["PYTEST_MONITOR_DB_PASSWORD"] = "testing_db"
@@ -305,6 +306,35 @@ def connected_PostgresDBHandler(postgres_empty_db_mock_cursor):
     reset_db(db._PostgresDBHandler__cnx)
     db._PostgresDBHandler__cnx.close()
 
+def test_sqlite_handler(pytester):
+    # db handler
+    db = SqliteDBHandler(":memory:")
+    session, metrics, exc_context = db.query(
+        "SELECT name FROM sqlite_master where type='table'", (), many=True
+    )
+    assert session[0] == "TEST_SESSIONS"
+    assert metrics[0] == "TEST_METRICS"
+    assert exc_context[0] == "EXECUTION_CONTEXTS"
+
+
+def test_postgres_handler(connected_PostgresDBHandler):
+    db = connected_PostgresDBHandler
+    tables = db.query(
+        "SELECT tablename FROM pg_tables where schemaname='public'",
+        (),
+        many=True,
+    )
+    tables = [table for (table,) in tables]
+    try:
+        assert "test_sessions" in tables
+        assert "test_metrics" in tables
+        assert "execution_contexts" in tables
+    except Exception as e:
+        print(
+            "There might be no postgresql database available, consider using docker containers in project",
+            file=sys.stderr,
+        )
+        raise e
 
 def test_sqlite_handler_check_create_test_passed_column(
     pytester, prepared_mocked_SqliteDBHandler
@@ -392,3 +422,4 @@ def test_postgres_handler_check_new_db_setup(connected_PostgresDBHandler):
         many=True,
     )
     assert any(column[0] == "test_passed" for column in columns)
+

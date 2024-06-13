@@ -41,12 +41,12 @@ class SqliteDBHandler:
         return cursor.fetchall() if many else cursor.fetchone()
 
     def insert_session(self, h, run_date, scm_id, description):
-        self.__cnx.execute(
-            "insert into TEST_SESSIONS(SESSION_H, RUN_DATE, SCM_ID, RUN_DESCRIPTION)"
-            " values (?,?,?,?)",
-            (h, run_date, scm_id, description),
-        )
-        self.__cnx.commit()
+        with self.__cnx:
+            self.__cnx.execute(
+                "insert into TEST_SESSIONS(SESSION_H, RUN_DATE, SCM_ID, RUN_DESCRIPTION)"
+                " values (?,?,?,?)",
+                (h, run_date, scm_id, description),
+            )
 
     def insert_metric(
         self,
