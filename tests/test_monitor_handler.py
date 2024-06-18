@@ -45,7 +45,7 @@ def connected_PostgresDBHandler():
     db._PostgresDBHandler__cnx.close()
 
 
-def test_sqlite_handler(pytester):
+def test_sqlite_handler():
     # db handler
     db = SqliteDBHandler(":memory:")
     session, metrics, exc_context = db.query(
