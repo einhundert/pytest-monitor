@@ -2,7 +2,7 @@ version: 2.1
 
 aliases:
   docker-image: &image
-    - image: mambaorg/micromamba
+    image: mambaorg/micromamba
 
   filter-pr-only: &PR-only
     branches:
