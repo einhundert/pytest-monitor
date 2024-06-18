@@ -122,6 +122,7 @@ def memory_usage(proc: tuple[Callable, Any, Any], retval=False):
                 ret = ret[0], e
                 # parent = psutil.Process(os.getpid())
                 # kill only the just spawned MemTimer process and its potential children
+                # instead of all children of the main process (could lead to issues when using testdir fixture)
                 parent = psutil.Process(p.pid)
                 for child in parent.children(recursive=True):
                     os.kill(child.pid, SIGKILL)
