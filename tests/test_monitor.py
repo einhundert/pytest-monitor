@@ -48,7 +48,7 @@ def test_monitor_basic_test(testdir):
 
 
 def test_monitor_basic_test_failing(testdir):
-    """Make sure that pytest-monitor does the job without impacting user tests."""
+    """Make sure that pytest-monitor handles failing tests properly (without ending in deadlock when nested)"""
     # create a temporary pytest test module
     testdir.makepyfile(
         """
@@ -444,6 +444,7 @@ def test_monitor_with_doctest(testdir):
 
 
 def test_monitor_monitor_failed_tests(testdir):
+    """Check new standard behavior that monitors failed tests in database"""
     testdir.makepyfile(
         """
         def test_failing_test():
@@ -467,6 +468,7 @@ def test_monitor_monitor_failed_tests(testdir):
 
 
 def test_monitor_no_monitor_failed(testdir):
+    """Ensure cmd flag --no-failed works and turns of monitoring failed tests"""
     testdir.makepyfile(
         """
         def test_failing_test():

@@ -31,6 +31,7 @@ def reset_db(db_context: DB_Context):
 
 @pytest.fixture
 def sqlite_empty_mock_db() -> sqlite3.Connection:
+    """Initialize empty sqlite3 db"""
     mockdb = sqlite3.connect(":memory:")
     yield mockdb
     mockdb.close()
@@ -38,6 +39,7 @@ def sqlite_empty_mock_db() -> sqlite3.Connection:
 
 @pytest.fixture
 def prepared_mocked_SqliteDBHandler(sqlite_empty_mock_db) -> DBHandler:
+    """Pepare a sqlite db handler with the old style database table (without passed column)"""
     mockdb = sqlite_empty_mock_db
     db_cursor = mockdb.cursor()
     db_cursor.execute(
@@ -149,10 +151,28 @@ CREATE TABLE IF NOT EXISTS TEST_METRICS (
 
     return db
 
+def test_sqlite_handler(pytester):
+    """Ensure the Sqlite DB Handler works as expected"""
+    # db handler
+    db = DBHandler(":memory:")
+    session, metrics, exc_context = db.query(
+        "SELECT name FROM sqlite_master where type='table'", (), many=True
+    )
+    assert session[0] == "TEST_SESSIONS"
+    assert metrics[0] == "TEST_METRICS"
+    assert exc_context[0] == "EXECUTION_CONTEXTS"
+
+def test_sqlite_handler_check_new_db_setup(pytester):
+    """Check the Sqlite Handler initializes the new Test_Metrics table configuration"""
+    # db handler
+    db = DBHandler(":memory:")
+    table_cols = db.query("PRAGMA table_info(TEST_METRICS)", (), many=True)
+    assert any(column[1] == "TEST_PASSED" for column in table_cols)
 
 def test_sqlite_handler_check_create_test_passed_column(
     pytester, prepared_mocked_SqliteDBHandler
 ):
+    """Check automatic migration from existing old database to new database style (passed column in TEST_METRICS)"""
     # mockedDBHandler with old style database attached
     mockedHandler = prepared_mocked_SqliteDBHandler
     mock_cursor = mockedHandler.__cnx.cursor()
@@ -187,8 +207,3 @@ def test_sqlite_handler_check_create_test_passed_column(
         raise
 
 
-def test_sqlite_handler_check_new_db_setup(pytester):
-    # db handler
-    db = DBHandler(":memory:")
-    table_cols = db.query("PRAGMA table_info(TEST_METRICS)", (), many=True)
-    assert any(column[1] == "TEST_PASSED" for column in table_cols)
