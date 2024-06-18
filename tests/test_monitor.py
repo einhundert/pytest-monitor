@@ -57,7 +57,7 @@ def test_monitor_basic_test_failing(testdir):
     def test_fail():
         time.sleep(0.5)
         x = [ "hello" ]
-        assert len(x) == 2 
+        assert len(x) == 2
 
 """
     )

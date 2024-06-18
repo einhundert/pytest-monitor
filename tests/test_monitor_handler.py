@@ -29,7 +29,7 @@ def reset_db(db_context: DB_Context):
     # cleanup_cursor.execute("GRANT ALL ON SCHEMA public TO public;")
 
 
-@pytest.fixture
+@pytest.fixture()
 def sqlite_empty_mock_db() -> sqlite3.Connection:
     """Initialize empty sqlite3 db"""
     mockdb = sqlite3.connect(":memory:")
@@ -37,7 +37,7 @@ def sqlite_empty_mock_db() -> sqlite3.Connection:
     mockdb.close()
 
 
-@pytest.fixture
+@pytest.fixture()
 def prepared_mocked_SqliteDBHandler(sqlite_empty_mock_db) -> DBHandler:
     """Pepare a sqlite db handler with the old style database table (without passed column)"""
     mockdb = sqlite_empty_mock_db
