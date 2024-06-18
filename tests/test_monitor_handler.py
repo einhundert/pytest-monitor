@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
+from __future__ import annotations
 import os
 import sqlite3
 import sys
-
 import pytest
 
 try:
@@ -12,11 +12,9 @@ except ImportError:
 
 from pytest_monitor.handler import PostgresDBHandler, SqliteDBHandler
 
-DB_Context = psycopg.Connection | sqlite3.Connection
-
 
 # helper function
-def reset_db(db_context: DB_Context):
+def reset_db(db_context: psycopg.Connection | sqlite3.Connection):
     # cleanup_cursor.execute("DROP DATABASE postgres")
     # cleanup_cursor.execute("CREATE DATABASE postgres")
     cleanup_cursor = db_context.cursor()
