@@ -14,7 +14,8 @@ def _setup_environment_postgres():
     os.environ["PYTEST_MONITOR_DB_PORT"] = "5432"
 
 
-def test_pytestmonitorsession_close_connection(_setup_environment_postgres):
+@pytest.mark.usefixtures("_setup_environment_postgres")
+def test_pytestmonitorsession_close_connection():
     session = PyTestMonitorSession(":memory:")
     db = session._PyTestMonitorSession__db
 
@@ -27,7 +28,7 @@ def test_pytestmonitorsession_close_connection(_setup_environment_postgres):
 
     try:
         db.query("SELECT * FROM sqlite_master LIMIT 1", ())
-        assert False
+        pytest.fail("Database should not be available anymore")
     except Exception:
         assert True
 
