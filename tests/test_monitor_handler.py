@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import datetime
 import os
 import sqlite3
 import sys
@@ -8,13 +7,10 @@ import pytest
 
 try:
     import psycopg
-    from psycopg.cursor import BaseCursor as PostgresCursor
 except ImportError:
     import psycopg2 as psycopg
-    from psycopg2.extensions import cursor as PostgresCursor
 
 from pytest_monitor.handler import PostgresDBHandler, SqliteDBHandler
-from pytest_monitor.sys_utils import determine_scm_revision
 
 DB_Context = psycopg.Connection | sqlite3.Connection
 
@@ -38,7 +34,7 @@ def reset_db(db_context: DB_Context):
     # cleanup_cursor.execute("GRANT ALL ON SCHEMA public TO public;")
 
 
-@pytest.fixture
+@pytest.fixture()
 def connected_PostgresDBHandler():
     os.environ["PYTEST_MONITOR_DB_NAME"] = "postgres"
     os.environ["PYTEST_MONITOR_DB_USER"] = "postgres"

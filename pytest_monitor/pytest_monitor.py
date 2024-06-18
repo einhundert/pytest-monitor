@@ -236,7 +236,7 @@ def pytest_pyfunc_call(pyfuncitem):
         )
         if isinstance(m[1], BaseException):  # Do we have any outcome?
             raise m[1]
-        memuse = m[0][0] if type(m[0]) is list else m[0]
+        memuse = m[0][0] if isinstance(m[0], list) else m[0]
         setattr(pyfuncitem, "mem_usage", memuse)
         setattr(pyfuncitem, "monitor_results", True)
 

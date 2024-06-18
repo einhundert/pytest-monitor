@@ -90,7 +90,7 @@ class PyTestMonitorSession:
         if description:
             d["description"] = description
         for tag in tags:
-            if type(tag) is str:
+            if isinstance(tag, str):
                 _tag_info = tag.split("=", 1)
                 d[_tag_info[0]] = _tag_info[1]
             else:
@@ -143,7 +143,7 @@ class PyTestMonitorSession:
         memuse = memory_profiler.memory_usage(
             (dummy,), max_iterations=1, max_usage=True
         )
-        self.__mem_usage_base = memuse[0] if type(memuse) is list else memuse
+        self.__mem_usage_base = memuse[0] if isinstance(memuse, list) else memuse
 
     def add_test_info(
         self,
