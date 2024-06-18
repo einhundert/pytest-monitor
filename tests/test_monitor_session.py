@@ -7,6 +7,7 @@ from pytest_monitor.session import PyTestMonitorSession
 
 @pytest.fixture()
 def _setup_environment_postgres():
+    """Fixture to set environment variables for postgres connection."""
     os.environ["PYTEST_MONITOR_DB_NAME"] = "postgres"
     os.environ["PYTEST_MONITOR_DB_USER"] = "postgres"
     os.environ["PYTEST_MONITOR_DB_PASSWORD"] = "testing_db"
@@ -16,6 +17,7 @@ def _setup_environment_postgres():
 
 @pytest.mark.usefixtures("_setup_environment_postgres")
 def test_pytestmonitorsession_close_connection():
+    """Test to check properly closed database connection"""
     session = PyTestMonitorSession(":memory:")
     db = session._PyTestMonitorSession__db
 

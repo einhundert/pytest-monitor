@@ -15,6 +15,7 @@ from pytest_monitor.handler import PostgresDBHandler, SqliteDBHandler
 
 # helper function
 def reset_db(db_context: psycopg.Connection | sqlite3.Connection):
+    """Empty all tables inside the database to provide a clean slate for the next test."""
     # cleanup_cursor.execute("DROP DATABASE postgres")
     # cleanup_cursor.execute("CREATE DATABASE postgres")
     cleanup_cursor = db_context.cursor()
@@ -34,6 +35,7 @@ def reset_db(db_context: psycopg.Connection | sqlite3.Connection):
 
 @pytest.fixture()
 def connected_PostgresDBHandler():
+    """Provide a DBHandler connected to a Postgres database."""
     os.environ["PYTEST_MONITOR_DB_NAME"] = "postgres"
     os.environ["PYTEST_MONITOR_DB_USER"] = "postgres"
     os.environ["PYTEST_MONITOR_DB_PASSWORD"] = "testing_db"
@@ -46,6 +48,7 @@ def connected_PostgresDBHandler():
 
 
 def test_sqlite_handler():
+    """Test for working sqlite database"""
     # db handler
     db = SqliteDBHandler(":memory:")
     session, metrics, exc_context = db.query(
@@ -57,6 +60,7 @@ def test_sqlite_handler():
 
 
 def test_postgres_handler(connected_PostgresDBHandler):
+    """Test for working postgres database"""
     db = connected_PostgresDBHandler
     tables = db.query(
         "SELECT tablename FROM pg_tables where schemaname='public'",
