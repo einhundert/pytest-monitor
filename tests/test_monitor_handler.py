@@ -151,7 +151,7 @@ CREATE TABLE IF NOT EXISTS TEST_METRICS (
 
     return db
 
-def test_sqlite_handler(pytester):
+def test_sqlite_handler():
     """Ensure the Sqlite DB Handler works as expected"""
     # db handler
     db = DBHandler(":memory:")
@@ -162,7 +162,7 @@ def test_sqlite_handler(pytester):
     assert metrics[0] == "TEST_METRICS"
     assert exc_context[0] == "EXECUTION_CONTEXTS"
 
-def test_sqlite_handler_check_new_db_setup(pytester):
+def test_sqlite_handler_check_new_db_setup():
     """Check the Sqlite Handler initializes the new Test_Metrics table configuration"""
     # db handler
     db = DBHandler(":memory:")
@@ -170,7 +170,7 @@ def test_sqlite_handler_check_new_db_setup(pytester):
     assert any(column[1] == "TEST_PASSED" for column in table_cols)
 
 def test_sqlite_handler_check_create_test_passed_column(
-    pytester, prepared_mocked_SqliteDBHandler
+        prepared_mocked_SqliteDBHandler
 ):
     """Check automatic migration from existing old database to new database style (passed column in TEST_METRICS)"""
     # mockedDBHandler with old style database attached
