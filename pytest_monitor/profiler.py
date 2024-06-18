@@ -38,6 +38,7 @@
 import os
 from signal import SIGKILL
 from typing import Any, Callable
+from typing import Tuple
 
 import psutil
 
@@ -50,7 +51,7 @@ except ImportError:
     raise
 
 
-def memory_usage(proc: tuple[Callable, Any, Any], retval=False):
+def memory_usage(proc: Tuple[Callable, Any, Any], retval=False):
     """
     Return the memory usage of a process or piece of code
 
