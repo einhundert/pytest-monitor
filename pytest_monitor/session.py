@@ -90,7 +90,7 @@ class PyTestMonitorSession:
         if description:
             d["description"] = description
         for tag in tags:
-            if type(tag) is str:
+            if isinstance(tag, str):
                 _tag_info = tag.split("=", 1)
                 d[_tag_info[0]] = _tag_info[1]
             else:

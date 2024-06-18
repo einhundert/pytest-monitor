@@ -5,8 +5,9 @@ import pytest
 from pytest_monitor.session import PyTestMonitorSession
 
 
-@pytest.fixture
-def setup_environment_postgres():
+@pytest.fixture()
+def _setup_environment_postgres():
+    """Fixture to set environment variables for postgres connection."""
     os.environ["PYTEST_MONITOR_DB_NAME"] = "postgres"
     os.environ["PYTEST_MONITOR_DB_USER"] = "postgres"
     os.environ["PYTEST_MONITOR_DB_PASSWORD"] = "testing_db"
@@ -14,20 +15,22 @@ def setup_environment_postgres():
     os.environ["PYTEST_MONITOR_DB_PORT"] = "5432"
 
 
-def test_pytestmonitorsession_close_connection(setup_environment_postgres):
+@pytest.mark.usefixtures("_setup_environment_postgres")
+def test_pytestmonitorsession_close_connection():
+    """Test to check properly closed database connection"""
     session = PyTestMonitorSession(":memory:")
     db = session._PyTestMonitorSession__db
 
     try:
         db.query("SELECT * FROM sqlite_master LIMIT 1", ())
     except Exception:
-        assert False
+        pytest.fail("Database should be available")
 
     session.close()
 
     try:
         db.query("SELECT * FROM sqlite_master LIMIT 1", ())
-        assert False
+        pytest.fail("Database should not be available anymore")
     except Exception:
         assert True
 

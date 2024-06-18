@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import annotations
 import datetime
 import os
 import sqlite3
@@ -16,11 +17,9 @@ except ImportError:
 from pytest_monitor.handler import PostgresDBHandler, SqliteDBHandler
 from pytest_monitor.sys_utils import determine_scm_revision
 
-DB_Context = psycopg.Connection | sqlite3.Connection
-
-
 # helper function
-def reset_db(db_context: DB_Context):
+def reset_db(db_context: psycopg.Connection | sqlite3.Connection):
+    """Empty all tables inside the database to provide a clean slate for the next test."""
     # cleanup_cursor.execute("DROP DATABASE postgres")
     # cleanup_cursor.execute("CREATE DATABASE postgres")
     cleanup_cursor = db_context.cursor()
@@ -38,14 +37,14 @@ def reset_db(db_context: DB_Context):
     # cleanup_cursor.execute("GRANT ALL ON SCHEMA public TO public;")
 
 
-@pytest.fixture
+@pytest.fixture()
 def sqlite_empty_mock_db() -> sqlite3.Connection:
     mockdb = sqlite3.connect(":memory:")
     yield mockdb
     mockdb.close()
 
 
-@pytest.fixture
+@pytest.fixture()
 def prepared_mocked_SqliteDBHandler(sqlite_empty_mock_db) -> SqliteDBHandler:
     mockdb = sqlite_empty_mock_db
     db_cursor = mockdb.cursor()
@@ -159,7 +158,7 @@ CREATE TABLE IF NOT EXISTS TEST_METRICS (
     return db
 
 
-@pytest.fixture
+@pytest.fixture()
 def postgres_empty_db_mock_cursor():
     # set up databse
     os.environ["PYTEST_MONITOR_DB_NAME"] = "postgres"
@@ -181,7 +180,7 @@ def postgres_empty_db_mock_cursor():
 
 
 # prepare db with tables and example session, execution context, test entry inserted
-@pytest.fixture
+@pytest.fixture()
 def prepared_mock_db_cursor_postgres(
     postgres_empty_db_mock_cursor,
 ) -> PostgresCursor:
@@ -294,8 +293,9 @@ CREATE TABLE IF NOT EXISTS TEST_METRICS (
     db_cursor.close()
 
 
-@pytest.fixture
+@pytest.fixture()
 def connected_PostgresDBHandler():
+    """Provide a DBHandler connected to a Postgres database."""
     os.environ["PYTEST_MONITOR_DB_NAME"] = "postgres"
     os.environ["PYTEST_MONITOR_DB_USER"] = "postgres"
     os.environ["PYTEST_MONITOR_DB_PASSWORD"] = "testing_db"
@@ -306,7 +306,9 @@ def connected_PostgresDBHandler():
     reset_db(db._PostgresDBHandler__cnx)
     db._PostgresDBHandler__cnx.close()
 
-def test_sqlite_handler(pytester):
+
+def test_sqlite_handler():
+    """Test for working sqlite database"""
     # db handler
     db = SqliteDBHandler(":memory:")
     session, metrics, exc_context = db.query(
@@ -318,6 +320,7 @@ def test_sqlite_handler(pytester):
 
 
 def test_postgres_handler(connected_PostgresDBHandler):
+    """Test for working postgres database"""
     db = connected_PostgresDBHandler
     tables = db.query(
         "SELECT tablename FROM pg_tables where schemaname='public'",
