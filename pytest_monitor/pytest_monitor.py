@@ -84,6 +84,12 @@ def pytest_addoption(parser):
         " run in this session).",
     )
     group.addoption(
+        "--no-failed",
+        action="store_true",
+        dest="mtr_disable_monitoring_failed",
+        help="Disable monitoring of failed tests and only monitor successful tests",
+    )
+    group.addoption(
         "--no-gc",
         action="store_true",
         dest="mtr_disable_gc",
@@ -230,6 +236,8 @@ def pytest_pyfunc_call(pyfuncitem):
         setattr(pyfuncitem, "monitor_results", True)
 
         if isinstance(exception, BaseException):  # Do we have any outcome?
+            if pyfuncitem.session.config.option.mtr_disable_monitoring_failed:
+                setattr(pyfuncitem, "monitor_results", False)
             setattr(pyfuncitem, "passed", False)
             raise exception
 
