@@ -39,6 +39,7 @@ def reset_db(db_context: psycopg.Connection | sqlite3.Connection):
 
 @pytest.fixture()
 def sqlite_empty_mock_db() -> sqlite3.Connection:
+    """Provicde an empty sqlite database"""
     mockdb = sqlite3.connect(":memory:")
     yield mockdb
     mockdb.close()
@@ -46,6 +47,7 @@ def sqlite_empty_mock_db() -> sqlite3.Connection:
 
 @pytest.fixture()
 def prepared_mocked_SqliteDBHandler(sqlite_empty_mock_db) -> SqliteDBHandler:
+    """Prepare an sqlite handler with an old style database (without TEST_PASSED column)"""
     mockdb = sqlite_empty_mock_db
     db_cursor = mockdb.cursor()
     db_cursor.execute(
@@ -160,6 +162,7 @@ CREATE TABLE IF NOT EXISTS TEST_METRICS (
 
 @pytest.fixture()
 def postgres_empty_db_mock_cursor():
+    """Provide empty postgres database"""
     # set up databse
     os.environ["PYTEST_MONITOR_DB_NAME"] = "postgres"
     os.environ["PYTEST_MONITOR_DB_USER"] = "postgres"
@@ -184,6 +187,7 @@ def postgres_empty_db_mock_cursor():
 def prepared_mock_db_cursor_postgres(
     postgres_empty_db_mock_cursor,
 ) -> PostgresCursor:
+    """Prepare postgres database with old style database (without TEST_PASSED column)"""
     db_cursor = postgres_empty_db_mock_cursor
     db_cursor.execute(
         """
@@ -319,29 +323,10 @@ def test_sqlite_handler():
     assert exc_context[0] == "EXECUTION_CONTEXTS"
 
 
-def test_postgres_handler(connected_PostgresDBHandler):
-    """Test for working postgres database"""
-    db = connected_PostgresDBHandler
-    tables = db.query(
-        "SELECT tablename FROM pg_tables where schemaname='public'",
-        (),
-        many=True,
-    )
-    tables = [table for (table,) in tables]
-    try:
-        assert "test_sessions" in tables
-        assert "test_metrics" in tables
-        assert "execution_contexts" in tables
-    except Exception as e:
-        print(
-            "There might be no postgresql database available, consider using docker containers in project",
-            file=sys.stderr,
-        )
-        raise e
-
 def test_sqlite_handler_check_create_test_passed_column(
     pytester, prepared_mocked_SqliteDBHandler
 ):
+    """Test succesful auto-migration from old to new-style sqlite database"""
     # mockedDBHandler with old style database attached
     mockedHandler = prepared_mocked_SqliteDBHandler
     mock_cursor = mockedHandler.__cnx.cursor()
@@ -377,15 +362,38 @@ def test_sqlite_handler_check_create_test_passed_column(
 
 
 def test_sqlite_handler_check_new_db_setup(pytester):
+    """Test for correctly initialized sqlite handler and database (new style database)"""
     # db handler
     db = SqliteDBHandler(":memory:")
     table_cols = db.query("PRAGMA table_info(TEST_METRICS)", (), many=True)
     assert any(column[1] == "TEST_PASSED" for column in table_cols)
 
 
+def test_postgres_handler(connected_PostgresDBHandler):
+    """Test for working postgres database"""
+    db = connected_PostgresDBHandler
+    tables = db.query(
+        "SELECT tablename FROM pg_tables where schemaname='public'",
+        (),
+        many=True,
+    )
+    tables = [table for (table,) in tables]
+    try:
+        assert "test_sessions" in tables
+        assert "test_metrics" in tables
+        assert "execution_contexts" in tables
+    except Exception as e:
+        print(
+            "There might be no postgresql database available, consider using docker containers in project",
+            file=sys.stderr,
+        )
+        raise e
+
+
 def test_postgres_handler_check_create_test_passed_column(
     prepared_mock_db_cursor_postgres,
 ):
+    """Test succesful auto-migration from old to new-style postgres database"""
     # get empty db fixture
     mockdb_cursor = prepared_mock_db_cursor_postgres
 
@@ -418,6 +426,7 @@ def test_postgres_handler_check_create_test_passed_column(
 
 
 def test_postgres_handler_check_new_db_setup(connected_PostgresDBHandler):
+    """Test for correctly initialized postgres handler and database (new style database)"""
     db = connected_PostgresDBHandler
     columns = db.query(
         "SELECT column_name FROM information_schema.columns WHERE table_name = 'test_metrics'",
