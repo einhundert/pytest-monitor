@@ -38,6 +38,7 @@
 import os
 from signal import SIGKILL
 from typing import Any, Callable
+from typing import Tuple
 
 import psutil
 
@@ -50,7 +51,7 @@ except ImportError:
     raise
 
 
-def memory_usage(proc: tuple[Callable, Any, Any], retval=False):
+def memory_usage(proc: Tuple[Callable, Any, Any], retval=False):
     """
     Return the memory usage of a process or piece of code
 
@@ -120,7 +121,10 @@ def memory_usage(proc: tuple[Callable, Any, Any], retval=False):
                 n_measurements = parent_conn.recv()
                 # Convert the one element list produced by MemTimer to a singular value
                 ret = ret[0], e
-                parent = psutil.Process(os.getpid())
+                # parent = psutil.Process(os.getpid())
+                # kill only the just spawned MemTimer process and its potential children
+                # instead of all children of the main process (could lead to issues when using testdir fixture)
+                parent = psutil.Process(p.pid)
                 for child in parent.children(recursive=True):
                     os.kill(child.pid, SIGKILL)
                 p.join(0)
@@ -179,7 +183,9 @@ def _get_memory(pid):
     try:
         # avoid using get_memory_info since it does not exists
         # in psutil > 2.0 and accessing it will cause exception.
-        meminfo_attr = "memory_info" if hasattr(process, "memory_info") else "get_memory_info"
+        meminfo_attr = (
+            "memory_info" if hasattr(process, "memory_info") else "get_memory_info"
+        )
         mem = getattr(process, meminfo_attr)()[0] / _TWO_20
         return mem
 

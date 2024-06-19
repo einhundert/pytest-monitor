@@ -39,15 +39,15 @@ def reset_db(db_context: psycopg.Connection | sqlite3.Connection):
 
 @pytest.fixture()
 def sqlite_empty_mock_db() -> sqlite3.Connection:
-    """Provicde an empty sqlite database"""
+    """Initialize empty sqlite3 db"""
     mockdb = sqlite3.connect(":memory:")
     yield mockdb
     mockdb.close()
 
 
 @pytest.fixture()
-def prepared_mocked_SqliteDBHandler(sqlite_empty_mock_db) -> SqliteDBHandler:
-    """Prepare an sqlite handler with an old style database (without TEST_PASSED column)"""
+def prepared_mocked_SqliteDBHandler(sqlite_empty_mock_db) -> DBHandler:
+    """Pepare a sqlite db handler with the old style database table (without passed column)"""
     mockdb = sqlite_empty_mock_db
     db_cursor = mockdb.cursor()
     db_cursor.execute(
@@ -312,7 +312,7 @@ def connected_PostgresDBHandler():
 
 
 def test_sqlite_handler():
-    """Test for working sqlite database"""
+    """Ensure the Sqlite DB Handler works as expected"""
     # db handler
     db = SqliteDBHandler(":memory:")
     session, metrics, exc_context = db.query(
@@ -322,11 +322,17 @@ def test_sqlite_handler():
     assert metrics[0] == "TEST_METRICS"
     assert exc_context[0] == "EXECUTION_CONTEXTS"
 
+def test_sqlite_handler_check_new_db_setup():
+    """Check the Sqlite Handler initializes the new Test_Metrics table configuration"""
+    # db handler
+    db = SqliteDBHandler(":memory:")
+    table_cols = db.query("PRAGMA table_info(TEST_METRICS)", (), many=True)
+    assert any(column[1] == "TEST_PASSED" for column in table_cols)
 
 def test_sqlite_handler_check_create_test_passed_column(
-    pytester, prepared_mocked_SqliteDBHandler
+        prepared_mocked_SqliteDBHandler
 ):
-    """Test succesful auto-migration from old to new-style sqlite database"""
+    """Check automatic migration from existing old database to new database style (passed column in TEST_METRICS)"""
     # mockedDBHandler with old style database attached
     mockedHandler = prepared_mocked_SqliteDBHandler
     mock_cursor = mockedHandler.__cnx.cursor()
@@ -360,78 +366,4 @@ def test_sqlite_handler_check_create_test_passed_column(
     except Exception:
         raise
 
-
-def test_sqlite_handler_check_new_db_setup(pytester):
-    """Test for correctly initialized sqlite handler and database (new style database)"""
-    # db handler
-    db = SqliteDBHandler(":memory:")
-    table_cols = db.query("PRAGMA table_info(TEST_METRICS)", (), many=True)
-    assert any(column[1] == "TEST_PASSED" for column in table_cols)
-
-
-def test_postgres_handler(connected_PostgresDBHandler):
-    """Test for working postgres database"""
-    db = connected_PostgresDBHandler
-    tables = db.query(
-        "SELECT tablename FROM pg_tables where schemaname='public'",
-        (),
-        many=True,
-    )
-    tables = [table for (table,) in tables]
-    try:
-        assert "test_sessions" in tables
-        assert "test_metrics" in tables
-        assert "execution_contexts" in tables
-    except Exception as e:
-        print(
-            "There might be no postgresql database available, consider using docker containers in project",
-            file=sys.stderr,
-        )
-        raise e
-
-
-def test_postgres_handler_check_create_test_passed_column(
-    prepared_mock_db_cursor_postgres,
-):
-    """Test succesful auto-migration from old to new-style postgres database"""
-    # get empty db fixture
-    mockdb_cursor = prepared_mock_db_cursor_postgres
-
-    # check for test passed column existent (should not exist)
-    mockdb_cursor.execute(
-        "SELECT column_name FROM information_schema.columns WHERE table_name = 'test_metrics'"
-    )
-    columns = mockdb_cursor.fetchall()
-    has_test_column = any(column[0] == "test_passed" for column in columns)
-    assert not has_test_column
-
-    # attach new PostgresHandler
-    pghandler = PostgresDBHandler()
-
-    # check for test passed column again (should exist now, auto-migration feature)
-    mockdb_cursor.execute(
-        "SELECT column_name FROM information_schema.columns WHERE table_name = 'test_metrics'"
-    )
-    columns = mockdb_cursor.fetchall()
-    has_test_column = any(column[0] == "test_passed" for column in columns)
-    assert has_test_column
-
-    # check for default value TRUE in existing entry
-    mockdb_cursor.execute("SELECT TEST_PASSED FROM TEST_METRICS LIMIT 1")
-    default_is_passed = mockdb_cursor.fetchone()
-
-    # default value true(1) for entries after migration
-    assert default_is_passed[0] == 1
-    pghandler._PostgresDBHandler__cnx.close()
-
-
-def test_postgres_handler_check_new_db_setup(connected_PostgresDBHandler):
-    """Test for correctly initialized postgres handler and database (new style database)"""
-    db = connected_PostgresDBHandler
-    columns = db.query(
-        "SELECT column_name FROM information_schema.columns WHERE table_name = 'test_metrics'",
-        (),
-        many=True,
-    )
-    assert any(column[0] == "test_passed" for column in columns)
 

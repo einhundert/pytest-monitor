@@ -64,7 +64,10 @@ class PyTestMonitorSession:
     def get_env_id(self, env):
         db, remote = None, None
         if self.__db:
-            row = self.__db.get_env_id(env.compute_hash())
+            row = self.__db.query(
+                "SELECT ENV_H FROM EXECUTION_CONTEXTS WHERE ENV_H= ?",
+                (env.compute_hash(),),
+            )
             db = row[0] if row else None
         if self.__remote:
             r = requests.get(f"{self.__remote}/contexts/{env.compute_hash()}")
@@ -123,7 +126,10 @@ class PyTestMonitorSession:
         db_id, remote_id = self.__eid
         if self.__db and db_id is None:
             self.__db.insert_execution_context(env)
-            db_id = self.__db.get_env_id(env.compute_hash())
+            db_id = self.__db.query(
+                "select ENV_H from EXECUTION_CONTEXTS where ENV_H = ?",
+                (env.compute_hash(),),
+            )[0]
         if self.__remote and remote_id is None:
             # We must postpone that to be run at the end of the pytest session.
             r = requests.post(f"{self.__remote}/contexts/", json=env.to_dict())

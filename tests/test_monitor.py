@@ -47,6 +47,31 @@ def test_monitor_basic_test(testdir):
     assert tags["version"] == "12.3.5"
 
 
+def test_monitor_basic_test_failing(testdir):
+    """Make sure that pytest-monitor handles failing tests properly (without ending in deadlock when nested)"""
+    # create a temporary pytest test module
+    testdir.makepyfile(
+        """
+    import time
+
+    def test_fail():
+        time.sleep(0.5)
+        x = [ "hello" ]
+        assert len(x) == 2
+
+"""
+    )
+
+    # run pytest with the following cmd args
+    result = testdir.runpytest("")
+
+    pymon_path = pathlib.Path(str(testdir)) / ".pymon"
+    assert pymon_path.exists()
+
+    # make sure that that we get a '0' exit code for the test suite
+    result.assert_outcomes(failed=1)
+
+
 def test_monitor_basic_test_description(testdir):
     """Make sure that pytest-monitor does the job without impacting user tests."""
     # create a temporary pytest test module
@@ -416,3 +441,64 @@ def test_monitor_with_doctest(testdir):
     # make sure that that we get a '0' exit code for the testsuite
     result.assert_outcomes(passed=1)
     assert not pymon_path.exists()
+
+
+def test_monitor_monitor_failed_tests(testdir):
+    """Check new standard behavior that monitors failed tests in database"""
+    testdir.makepyfile(
+        """
+        def test_failing_test():
+            assert False
+        """
+    )
+
+    result = testdir.runpytest("")
+    # # make sure that that we get a '0' exit code for the testsuite
+    result.assert_outcomes(failed=1)
+
+    pymon_path = pathlib.Path(str(testdir)) / ".pymon"
+    assert pymon_path.exists()
+    db = sqlite3.connect(str(pymon_path))
+    cursor = db.cursor()
+
+    # TEST_METRICS table is supposed to be have 1 entry (1 failed test)
+    cursor.execute("SELECT * FROM TEST_METRICS")
+    test_metrics = cursor.fetchall()
+    assert len(test_metrics) == 1
+
+
+def test_monitor_no_monitor_failed(testdir):
+    """Ensure cmd flag --no-failed works and turns of monitoring failed tests"""
+    testdir.makepyfile(
+        """
+        def test_failing_test():
+            assert False
+        """
+    )
+    pymon_path = pathlib.Path(str(testdir)) / ".pymon"
+    db = sqlite3.connect(str(pymon_path))
+    cursor = db.cursor()
+
+    result = testdir.runpytest("--no-failed")
+    result.assert_outcomes(failed=1)
+
+    # TEST_METRICS table is supposed to be empty (only one failing test)
+    cursor.execute("SELECT * FROM TEST_METRICS")
+    ncursor = cursor.fetchall()
+    print(ncursor)
+    assert not len(ncursor)
+
+    testdir.makepyfile(
+        """
+        def test_successful_test():
+            assert True
+        """
+    )
+
+    result = testdir.runpytest("--no-failed")
+    # make sure that that we get a '0' exit code for the testsuite
+    result.assert_outcomes(passed=1)
+
+    # TEST_METRICS table is supposed to have 1 entry (2 tests, 1 successful)
+    cursor.execute("SELECT * FROM TEST_METRICS")
+    assert len(cursor.fetchall()) == 1
