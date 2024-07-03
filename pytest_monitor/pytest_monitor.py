@@ -202,7 +202,7 @@ def pytest_pyfunc_call(pyfuncitem):
         except Exception:
             raise
         except BaseException as e:
-            return e
+            raise e
 
     def prof():
         m = memory_profiler.memory_usage((wrapped_function, ()), max_iterations=1, max_usage=True, retval=True)
@@ -213,9 +213,10 @@ def pytest_pyfunc_call(pyfuncitem):
         setattr(pyfuncitem, "monitor_results", True)
 
     if not PYTEST_MONITORING_ENABLED:
-        e = wrapped_function()
-        if isinstance(e, BaseException):
-            raise e
+        try:
+                wrapped_function()
+        except BaseException:
+                raise
     else:
         if not pyfuncitem.session.config.option.mtr_disable_gc:
             gc.collect()
