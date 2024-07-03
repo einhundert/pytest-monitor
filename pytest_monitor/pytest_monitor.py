@@ -234,8 +234,8 @@ def pytest_pyfunc_call(pyfuncitem):
             pyfuncitem.obj(**testargs)
         except Exception:
             raise
-        except BaseException as e:
-            raise e
+        except BaseException:
+            raise
 
     def prof():
         (memuse, exception) = memory_usage((wrapped_function, ()))
