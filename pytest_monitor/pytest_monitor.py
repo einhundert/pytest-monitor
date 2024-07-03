@@ -201,8 +201,8 @@ def pytest_pyfunc_call(pyfuncitem):
             pyfuncitem.obj(**testargs)
         except Exception:
             raise
-        except BaseException as e:
-            raise e
+        except BaseException:
+            raise
 
     def prof():
         m = memory_profiler.memory_usage((wrapped_function, ()), max_iterations=1, max_usage=True, retval=True)
