@@ -92,10 +92,12 @@ class SqliteDBHandler:
         self.__cnx.commit()
 
     def insert_execution_context(self, exc_context):
+        env_h = exc_context.compute_hash()
         self.__cnx.execute(
             "insert into EXECUTION_CONTEXTS(CPU_COUNT,CPU_FREQUENCY_MHZ,CPU_TYPE,CPU_VENDOR,"
             "RAM_TOTAL_MB,MACHINE_NODE,MACHINE_TYPE,MACHINE_ARCH,SYSTEM_INFO,"
-            "PYTHON_INFO,ENV_H) values (?,?,?,?,?,?,?,?,?,?,?)",
+            "PYTHON_INFO,ENV_H) SELECT (?,?,?,?,?,?,?,?,?,?,?)"
+            "WHERE NOT EXISTS (SELECT 1 FROM EXECUTION_CONTEXTS WHERE ENV_H = ?)",
             (
                 exc_context.cpu_count,
                 exc_context.cpu_frequency,
@@ -107,7 +109,8 @@ class SqliteDBHandler:
                 exc_context.architecture,
                 exc_context.system_info,
                 exc_context.python_info,
-                exc_context.compute_hash(),
+                env_h,
+                env_h,
             ),
         )
         self.__cnx.commit()
@@ -287,10 +290,12 @@ class PostgresDBHandler:
         self.__cnx.commit()
 
     def insert_execution_context(self, exc_context):
+        env_h = exc_context.compute_hash()
         self.__cnx.cursor().execute(
             "insert into EXECUTION_CONTEXTS(CPU_COUNT,CPU_FREQUENCY_MHZ,CPU_TYPE,CPU_VENDOR,"
             "RAM_TOTAL_MB,MACHINE_NODE,MACHINE_TYPE,MACHINE_ARCH,SYSTEM_INFO,"
-            "PYTHON_INFO,ENV_H) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            "PYTHON_INFO,ENV_H) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+            "WHERE NOT EXISTS (SELECT 1 FROM EXECUTION_CONTEXTS WHERE ENV_H = %s)",
             (
                 exc_context.cpu_count,
                 exc_context.cpu_frequency,
@@ -302,7 +307,8 @@ class PostgresDBHandler:
                 exc_context.architecture,
                 exc_context.system_info,
                 exc_context.python_info,
-                exc_context.compute_hash(),
+                env_h,
+                env_h,
             ),
         )
         self.__cnx.commit()
