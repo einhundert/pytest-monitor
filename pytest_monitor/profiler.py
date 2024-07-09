@@ -37,8 +37,7 @@
 
 import os
 from signal import SIGKILL
-from typing import Any, Callable
-from typing import Tuple
+from typing import Any, Callable, Tuple
 
 import psutil
 
@@ -115,7 +114,7 @@ def memory_usage(proc: Tuple[Callable, Any, Any], retval=False):
                 ret = ret[0], None
                 if retval:
                     ret = ret, returned
-            except Exception as e:
+            except BaseException as e:
                 parent_conn.send(0)  # finish timing
                 ret = parent_conn.recv()
                 n_measurements = parent_conn.recv()
