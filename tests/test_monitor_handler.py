@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
+
 import datetime
 import os
 import sqlite3
@@ -16,6 +17,7 @@ except ImportError:
 
 from pytest_monitor.handler import PostgresDBHandler, SqliteDBHandler
 from pytest_monitor.sys_utils import determine_scm_revision
+
 
 # helper function
 def reset_db(db_context: psycopg.Connection | sqlite3.Connection):
@@ -322,6 +324,7 @@ def test_sqlite_handler():
     assert metrics[0] == "TEST_METRICS"
     assert exc_context[0] == "EXECUTION_CONTEXTS"
 
+
 def test_sqlite_handler_check_new_db_setup():
     """Check the Sqlite Handler initializes the new Test_Metrics table configuration"""
     # db handler
@@ -329,8 +332,9 @@ def test_sqlite_handler_check_new_db_setup():
     table_cols = db.query("PRAGMA table_info(TEST_METRICS)", (), many=True)
     assert any(column[1] == "TEST_PASSED" for column in table_cols)
 
+
 def test_sqlite_handler_check_create_test_passed_column(
-        prepared_mocked_SqliteDBHandler
+    prepared_mocked_SqliteDBHandler,
 ):
     """Check automatic migration from existing old database to new database style (passed column in TEST_METRICS)"""
     # mockedDBHandler with old style database attached
@@ -365,5 +369,3 @@ def test_sqlite_handler_check_create_test_passed_column(
 
     except Exception:
         raise
-
-
