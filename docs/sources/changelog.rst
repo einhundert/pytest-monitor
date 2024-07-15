@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :release:`to be discussed`
+* :bug: SQLite handler (handler.py) insert_execution_context() function: query needed to be updated (removing paranthesis)
 * :feature: `#65` Also monitor failed test as default and add flag `--no-failed` to turn monitoring failed tests off.
 * :feature: `#77` Add a PostgreSQL backend implementation to optionally use a PostgreSQL Database for test metric logging.
 * :bug: `#79` Fix a bug concerning commandline flag `--no-monitor` causing tests that are supposed to fail to pass instead
