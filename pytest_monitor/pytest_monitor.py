@@ -228,6 +228,13 @@ def pytest_pyfunc_call(pyfuncitem):
         except Exception:
             raise
         except BaseException as e:
+            # this is a workaround to fix the faulty behavior of the memory profiler
+            # that only catches Exceptions but should catch BaseExceptions instead
+            # actually BaseExceptions should be raised here, but without modifications
+            # of the memory profiler (like proposed in PR
+            # https://github.com/CFMTech/pytest-monitor/pull/82 ) this problem
+            # can just be worked around like so (BaseException can only come through
+            # this way)
             return e
 
     def prof():
@@ -241,7 +248,14 @@ def pytest_pyfunc_call(pyfuncitem):
         setattr(pyfuncitem, "monitor_results", True)
 
     if not PYTEST_MONITORING_ENABLED:
-        wrapped_function()
+        try:
+            # this is a workaround to fix the faulty behavior of the memory profiler
+            # that only catches Exceptions but should catch BaseExceptions instead
+            e = wrapped_function()
+            if isinstance(e, BaseException):
+                raise e
+        except BaseException:
+            raise
     else:
         if not pyfuncitem.session.config.option.mtr_disable_gc:
             gc.collect()
