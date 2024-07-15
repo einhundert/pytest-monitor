@@ -96,7 +96,7 @@ class SqliteDBHandler:
         self.__cnx.execute(
             "insert into EXECUTION_CONTEXTS(CPU_COUNT,CPU_FREQUENCY_MHZ,CPU_TYPE,CPU_VENDOR,"
             "RAM_TOTAL_MB,MACHINE_NODE,MACHINE_TYPE,MACHINE_ARCH,SYSTEM_INFO,"
-            "PYTHON_INFO,ENV_H) SELECT (?,?,?,?,?,?,?,?,?,?,?)"
+            "PYTHON_INFO,ENV_H) SELECT ?,?,?,?,?,?,?,?,?,?,?"
             " WHERE NOT EXISTS (SELECT 1 FROM EXECUTION_CONTEXTS WHERE ENV_H = ?)",
             (
                 exc_context.cpu_count,
